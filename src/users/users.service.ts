@@ -5,6 +5,8 @@ import { UsersRepository } from './users.repository.js';
 
 /** Postgres unique_violation error code. */
 const POSTGRES_UNIQUE_VIOLATION = '23505';
+/** Prisma's own code for a unique constraint violation (wraps the driver error). */
+const PRISMA_UNIQUE_VIOLATION = 'P2002';
 
 @Injectable()
 export class UsersService {
@@ -24,11 +26,10 @@ export class UsersService {
   }
 
   private isDuplicateEmailError(error: unknown): boolean {
-    return (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      (error as { code: unknown }).code === POSTGRES_UNIQUE_VIOLATION
-    );
+    if (typeof error !== 'object' || error === null || !('code' in error)) {
+      return false;
+    }
+    const code = (error as { code: unknown }).code;
+    return code === POSTGRES_UNIQUE_VIOLATION || code === PRISMA_UNIQUE_VIOLATION;
   }
 }
